@@ -47,12 +47,12 @@ def Logo():
                                              
           {w}>> {g}STARLINK BYPASS {w}<<
   {y}-----------------------------------------
-   {w}Owner: {g}@Starlinkuser123
+   {w}Owner: {g}@paing07709
   {y}-----------------------------------------{w}"""
     print(logo)
 
 # =====================================================================
-# --- 🔑 KEY SYSTEM & LICENSE LOGIC START ---
+# --- 🔑 KEY SYSTEM & LICENSE LOGIC START (UPDATED) ---
 # =====================================================================
 
 def get_device_id():
@@ -66,24 +66,25 @@ def get_device_id():
         serial = os.popen("getprop ro.serialno").read().strip()
         # အကယ်၍ Serial မရှိလျှင် သို့မဟုတ် တိုလွန်းလျှင် Random စာလုံး ထုတ်ပေးခြင်း
         if not serial or len(serial) < 4:
-            serial = "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(16))
+            serial = "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(12))
             
         # အက္ခရာနှင့် ဂဏန်းများကို သန့်စင်ပြီး စာလုံးအကြီးပြောင်းခြင်း
         clean_serial = re.sub(r'[^A-Za-z0-9]', '', serial).upper()
         
-        # 'RUI-' (၄ လုံး) ရဲ့ နောက်ကနေ ၁၀ လုံး အတိအကျ ထွက်လာအောင် ဖြတ်ယူခြင်း
-        if len(clean_serial) >= 10:
-            final_serial = clean_serial[:10]
+        # 'RUI-' က ၄ လုံးရှိပြီးသားမို့လို့ ကျန်တဲ့ စာလုံးရေ ၆ လုံးပဲ ယူပြီး စုစုပေါင်း ၁၀ လုံး အတိအကျထွက်အောင် ဖြတ်ယူခြင်း
+        if len(clean_serial) >= 6:
+            final_serial = clean_serial[:6]
         else:
-            # အကယ်၍ ၁၀ လုံးမပြည့်ပါက ကျန်တာကို 'X' ဖြင့် ဖြည့်ခြင်း
-            final_serial = clean_serial.ljust(10, 'X')
+            # အကယ်၍ ၆ လုံးမပြည့်ပါက ကျန်တာကို 'X' ဖြင့် ဖြည့်ခြင်း
+            final_serial = clean_serial.ljust(6, 'X')
             
-        new_id = f"RUI-{final_serial}" # စုစုပေါင်း ၁၄ လုံး အတိအကျ ထွက်လာပါမည်။
+        new_id = f"RUI-{final_serial}"
         with open(id_file, "w") as f: 
             f.write(new_id)
         return new_id
     except: 
-        return "RUI-1234567890"
+        # တစ်ခုခုလွဲချော်ခဲ့ပါက Default ၁၀ လုံး စံသတ်မှတ်ချက်ပေးခြင်း
+        return "RUI-UNKNOWN"
 
 def get_network_time():
     """ စက်ထဲက အချိန်ကို လိမ်လို့မရအောင် Google Server ဆီက အချိန်အမှန်ကို ယူသည့် Logic """
@@ -97,7 +98,8 @@ def get_network_time():
         return None
 
 def parse_duration(duration_str):
-    """ Server ပေါ်က ရက်စွဲစာသား ကို ပြောင်းလဲပေးသည့် Logic """
+    """ Server ပေါ်က ရက်စွဲစာသား (ဥပမာ- 30 Days, 5 Hours, 10 min) ကို ပြောင်းလဲပေးသည့် Logic """
+    # Space ပါပါ မပါပါ ဖတ်နိုင်ရန်နှင့် စာလုံးအပြည့်/အတိုကောက်များ ဖတ်နိုင်ရန် Regex ပြင်ဆင်မှု
     days = re.search(r'(\d+)\s*(d|day|days)', duration_str, re.I)
     hours = re.search(r'(\d+)\s*(h|hour|hours)', duration_str, re.I)
     minutes = re.search(r'(\d+)\s*(m|min|minute|minutes)', duration_str, re.I)
@@ -186,33 +188,37 @@ def check_online_license(user_key):
     return False, "Access Denied"
 
 async def background_license_sync(user_key, current_expiry_dt):
-    """ နောက်ကွယ်မှ GitHub ဆီ လှမ်းစစ်ပြီး လိုင်စင်အား Auto-Update ပြုလုပ်ပေးမည့် အပိုင်း """
+    """ အသုံးပြုသူ Menu ထဲရောက်နေစဉ် နောက်ကွယ်မှ GitHub ဆီ လှမ်းစစ်ပြီး လိုင်စင်အား Auto-Update ပြုလုပ်ပေးမည့် အပိုင်း """
     global global_expiry_info
     key_file = ".access_key"
     
     while True:
-        await asyncio.sleep(15)
+        await asyncio.sleep(15) # ၁၅ စက္ကန့်လျှင် တစ်ကြိမ် နောက်ကွယ်မှ စစ်ဆေးမည်
         try:
+            # Server က လိုင်စင်အခြေအနေကို ဆွဲယူခြင်း
             loop = asyncio.get_event_loop()
             status, info = await loop.run_in_executor(None, check_online_license, user_key)
             
             if status is True:
+                # အကယ်၍ သက်တမ်းပြောင်းလဲသွားပါက (ဥပမာ- သက်တမ်းတိုးပေးလိုက်ခြင်း) စက်ထဲကဖိုင်ကို အလိုအလျောက် Update လုပ်မည်
                 global_expiry_info = info
                 with open(key_file, "w") as f: 
                     f.write(f"{user_key}|{info.timestamp()}")
             elif status is False:
+                # Key ကို Block လိုက်ခြင်း သို့မဟုတ် သက်တမ်းအမှန်တကယ်ကုန်သွားပါက Tool ကို ချက်ချင်း ပိတ်ပစ်မည်
                 print(f"\n{r}[!] License Update: {info} Tool Closing...{w}")
                 if os.path.exists(key_file): 
                     os.remove(key_file)
                 os._exit(0)
         except:
-            pass
+            pass # အင်တာနက်မရှိသေးပါက သို့မဟုတ် Error တက်ပါက လျစ်လျူရှုပြီး နောက်တစ်ကြိမ်ပြန်စစ်မည်
 
 # =====================================================================
 # --- 🔑 KEY SYSTEM & LICENSE LOGIC END ---
 # =====================================================================
 
 
+# --- Security Functions for Secret Key Magic ---
 def decode_secret_key(secret_key: str) -> str:
     try:
         b64_decoded = base64.b64decode(secret_key.encode('utf-8')).decode('utf-8')
@@ -236,7 +242,7 @@ class WifiSetup:
         status = self.unbind()
         Line()
         if not status:
-            print(f"{y}[!] Warning: Unbind old session failed!{w}")
+            print(f"{y}[!] Warning: Unbind old session failed! (Might be a new connection){w}")
         else:
             print(f"{g}[+] Old session unbinded successfully!{w}")
             print(f"{c}[*] Waiting 6 seconds for new data...{w}")
@@ -335,7 +341,7 @@ class WifiSetup:
         padded_data = pad(auth.encode("utf-8"), AES.block_size)
         cipher_text = cipher.encrypt(padded_data)
         encrypted_data = b"Salted__" + salt + cipher_text
-        return base64.b64encode(encrypted_data).decode("utf-8")
+        return base64.get_auth(encrypted_data).decode("utf-8")
 
     def get_auth(self, username):
         data = self.get_data()
@@ -445,13 +451,19 @@ async def execute(decode_access_data, ip):
                     Line()
                     session_id = await get_session_id(session, decode_access_data, previous_session_id, rep_mac=False)
                     if session_id is False:
-                        print(f"{y}[!] Session ID Not Found\n[*] Will Try Again After 100 seconds{w}")
+                        print(f"{y}[!] Session ID Not Found{w}")
+                        Line()
+                        print(f"{y}[*] Will Try Again After 100 seconds{w}")
                         Line()
                         time.sleep(100)
+                        session_id = await get_session_id(session, decode_access_data, previous_session_id, rep_mac=False)
                     elif session_id is None:
-                        print(f"{y}[!] Session ID Not Found\n[*] Will Try Again After 5 seconds{w}")
+                        print(f"{y}[!] Session ID Not Found{w}")
+                        Line()
+                        print(f"{y}[*] Will Try Again After 5 seconds{w}")
                         Line()
                         time.sleep(5)
+                        session_id = await get_session_id(session, decode_access_data, previous_session_id, rep_mac=False)
                     elif session_id:
                         previous_session_id = session_id
                         print(f"{g}[+] Found Session ID: {session_id}{w}")
@@ -461,13 +473,20 @@ async def execute(decode_access_data, ip):
                     send_status = await send(session, ip, session_id)
                     if not send_status:
                         print(f"{r}[!] Internet Bypass Failed, Secret Key/Session May Expired{w}")
+                        Line()
+                        print(f"{g}[+] Getting Ping...{w}")
+                        Line()
+                        ping = await get_ping()
+                        print(f"{b}[*] Current Ping is {ping}{w}")
+                        Line()
                     else:
                         print(f"{g}[+] Internet Bypass Active{w}")
-                    Line()
-                    print(f"{g}[+] Testing Ping...{w}")
-                    ping = await get_ping()
-                    print(f"{b}[*] Current Ping is {ping}{w}")
-                    Line()
+                        Line()
+                        print(f"{g}[+] Testing Ping...{w}")
+                        Line()
+                        ping = await get_ping()
+                        print(f"{b}[*] Current Ping is {ping}{w}")
+                        Line()
                     time.sleep(10)
                 time.sleep(5)
         except KeyboardInterrupt:
@@ -481,6 +500,8 @@ async def send(session, ip, session_id):
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36',
     }
     params = {
@@ -495,7 +516,10 @@ async def send(session, ip, session_id):
             else:
                 return False
     except Exception as e:
-        print(f"{y}[!] Sending Packages failed\n[*] Trying to Send Again...{w}")
+        print(f"{y}[!] Sending Packages failed{w}")
+        Line()
+        time.sleep(1.5)
+        print(f"{y}[*] Trying to Send Again...{w}")
         Line()
         time.sleep(1.5)
         return await send(session, ip, session_id)
@@ -516,14 +540,14 @@ def show_menu(remaining_time):
   │  {y}⏳ License Left: {g}{remaining_time:<20}{c}│
   └───────────────────────────────────────┘{w}""")
 
-# Live Expiry Info အတွက် Global variable
+# Live Expiry Info အတွက် Global variable သတ်မှတ်ခြင်း
 global_expiry_info = None
 
-# =====================================================================
-# 🚀 --- MAIN FUNCTION START ---
-# =====================================================================
 async def main():
     global global_expiry_info
+    # --------------------------------------------------------
+    # 🚀 STEP 1: Tool စ run တတာနဲ့ Key စစ်ဆေးမည့် အပိုင်း (Offline First)
+    # --------------------------------------------------------
     Logo()
     dev_id = get_device_id()
     key_file = ".access_key"
@@ -544,6 +568,7 @@ async def main():
     user_key = saved_key if saved_key else input(f"{y}[?] Enter Access Key: {w}").strip()
     
     if is_offline_login:
+        # Offline သို့မဟုတ် Local ကနေ အရင်ဆုံး ဖတ်ပြီး Menu ထဲ ချက်ချင်းပေးဝင်ရန်
         try:
             s_key, s_exp_ts = open(key_file, "r").read().strip().split("|")
             global_expiry_info = datetime.fromtimestamp(float(s_exp_ts))
@@ -557,6 +582,7 @@ async def main():
             is_offline_login = False
 
     if not is_offline_login:
+        # ဖြတ်သန်းမှုအသစ် သို့မဟုတ် ဖိုင်ပျက်နေလျှင် Online မှ အရင်စစ်မည်
         print(f"{c}[*] Verifying Access Key with Server...{w}")
         status, info = check_online_license(user_key)
         
@@ -575,10 +601,14 @@ async def main():
             print(f"{r}[!] Network Notification: {info}{w}")
             sys.exit(0)
             
-    # 🔄 နောက်ကွယ်မှ Auto-Update စစ်မည့် Task ပုံစံ စတင်ခြင်း
+    # --------------------------------------------------------
+    # 🔄 STEP 2: နောက်ကွယ်မှ Auto-Update ပုံစံ Task စတင်ခြင်း
+    # --------------------------------------------------------
     asyncio.create_task(background_license_sync(user_key, global_expiry_info))
         
-    # 📊 Main Menu Loop
+    # --------------------------------------------------------
+    # 📊 STEP 3: Main Menu အပိုင်း
+    # --------------------------------------------------------
     while True:
         Logo()
         current_remaining = format_countdown(global_expiry_info, datetime.now())
@@ -614,6 +644,3 @@ def start_program():
 
 if __name__ == "__main__":
     start_program()
-# =====================================================================
-# 🛑 --- MAIN FUNCTION END ---
-# =====================================================================
