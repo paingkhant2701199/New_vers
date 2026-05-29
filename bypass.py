@@ -519,4 +519,101 @@ def show_menu(remaining_time):
 # Live Expiry Info အတွက် Global variable
 global_expiry_info = None
 
-# ===============
+# =====================================================================
+# 🚀 --- MAIN FUNCTION START ---
+# =====================================================================
+async def main():
+    global global_expiry_info
+    Logo()
+    dev_id = get_device_id()
+    key_file = ".access_key"
+    
+    print(f"{b}[>] Device ID: {w}{dev_id}")
+    Line()
+    
+    saved_key = ""
+    is_offline_login = False
+    
+    if os.path.exists(key_file):
+        try: 
+            saved_key = open(key_file, "r").read().strip().split("|")[0]
+            is_offline_login = True
+        except: 
+            pass
+            
+    user_key = saved_key if saved_key else input(f"{y}[?] Enter Access Key: {w}").strip()
+    
+    if is_offline_login:
+        try:
+            s_key, s_exp_ts = open(key_file, "r").read().strip().split("|")
+            global_expiry_info = datetime.fromtimestamp(float(s_exp_ts))
+            if datetime.now() >= global_expiry_info:
+                print(f"{r}[!] Saved Key Expired!{w}")
+                os.remove(key_file)
+                sys.exit(0)
+            print(f"{g}[+] Saved License Loaded! Entering Menu...{w}")
+            time.sleep(1.5)
+        except:
+            is_offline_login = False
+
+    if not is_offline_login:
+        print(f"{c}[*] Verifying Access Key with Server...{w}")
+        status, info = check_online_license(user_key)
+        
+        if status is True:
+            global_expiry_info = info
+            remaining = format_countdown(info, datetime.now())
+            print(f"{g}[+] Access Granted!{w}")
+            print(f"{y}[!] Remaining Time: {g}{remaining}{w}")
+            time.sleep(2)
+        elif status is False:
+            if os.path.exists(key_file): 
+                os.remove(key_file)
+            print(f"{r}[!] Access Denied: {info}{w}")
+            sys.exit(0)
+        else:
+            print(f"{r}[!] Network Notification: {info}{w}")
+            sys.exit(0)
+            
+    # 🔄 နောက်ကွယ်မှ Auto-Update စစ်မည့် Task ပုံစံ စတင်ခြင်း
+    asyncio.create_task(background_license_sync(user_key, global_expiry_info))
+        
+    # 📊 Main Menu Loop
+    while True:
+        Logo()
+        current_remaining = format_countdown(global_expiry_info, datetime.now())
+        show_menu(current_remaining)
+        
+        choice = input(f"  {y}Choose Menu >>> {w}").strip()
+        
+        if choice == '1':
+            setup = WifiSetup()
+            setup.start_setup()
+            input(f"\n{y}Press Enter to return to menu...{w}")
+            
+        elif choice == '2':
+            print(f"\n{g}[*] Starting Internet Bypass...{w}")
+            access = InternetAccess()
+            await access.main()
+            break 
+            
+        elif choice == '3':
+            print(f"\n{r}[+] Exiting...{w}")
+            sys.exit(0)
+            
+        else:
+            print(f"\n{r}[!] Invalid choice!{w}")
+            time.sleep(1)
+
+def start_program():
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print(f"\n{r}[!] Program stopped.{w}")
+        sys.exit(0)
+
+if __name__ == "__main__":
+    start_program()
+# =====================================================================
+# 🛑 --- MAIN FUNCTION END ---
+# =====================================================================
