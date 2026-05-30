@@ -1,3 +1,3 @@
-import hack
+import ii
 if __name__ == "__main__":
-    hack.main()
+    ii.main()
