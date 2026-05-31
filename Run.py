@@ -1,3 +1,3 @@
-import i
+import code
 if __name__ == "__main__":
-    i.main()
+    code.main()
