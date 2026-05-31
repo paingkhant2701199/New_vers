@@ -1,3 +1,2 @@
 import hh
-if __name__ == "__main__":
-    hh.main()
+hh.main_entry()
