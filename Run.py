@@ -1,3 +1,5 @@
-import code
+import ruijie_mod
+
 if __name__ == "__main__":
-    code.main()
+    ruijie_mod.start_main()
+    
